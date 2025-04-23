@@ -1,0 +1,70 @@
+LOG IN:
+job seeker:
+    -First name ,Last name, Email, Password, roleId
+skillmatch-backend/
+├── src/
+│   ├── config/
+│   │   ├── db.config.ts      # Database connection configuration
+│   │   └── auth.config.ts    # Authentication configuration
+│   ├── controllers/
+│   │   ├── auth.controller.ts
+│   │   ├── user.controller.ts
+│   │   ├── job.controller.ts
+│   │   ├── skill.controller.ts
+│   │   ├── application.controller.ts
+│   │   ├── company.controller.ts
+│   │   ├── interview.controller.ts
+│   │   ├── cv.controller.ts
+│   │   ├── portfolio.controller.ts
+│   │   ├── career.controller.ts
+│   │   └── chat.controller.ts
+│   ├── middleware/
+│   │   ├── auth.middleware.ts       # JWT authentication middleware
+│   │   ├── role.middleware.ts       # Role-based access control
+│   │   ├── upload.middleware.ts     # File upload handling 
+│   │   └── error.middleware.ts      # Error handling middleware
+│   ├── models/
+│   │   ├── index.ts
+│   │   ├── user.model.ts
+│   │   ├── company.model.ts
+│   │   ├── skill.model.ts
+│   │   ├── job.model.ts
+│   │   ├── application.model.ts
+│   │   ├── cv.model.ts
+│   │   ├── interview.model.ts
+│   │   ├── portfolio.model.ts
+│   │   ├── notification.model.ts
+│   │   └── chat.model.ts
+│   ├── routes/
+│   │   ├── auth.routes.ts
+│   │   ├── user.routes.ts
+│   │   ├── job.routes.ts
+│   │   ├── skill.routes.ts
+│   │   ├── application.routes.ts
+│   │   ├── company.routes.ts
+│   │   ├── interview.routes.ts
+│   │   ├── cv.routes.ts
+│   │   ├── portfolio.routes.ts
+│   │   ├── career.routes.ts
+│   │   └── chat.routes.ts
+│   ├── services/
+│   │   ├── ai.service.ts      # AI integration service
+│   │   ├── email.service.ts   # Email notification service
+│   │   ├── skill-matching.service.ts
+│   │   └── storage.service.ts
+│   ├── types/
+│   │   ├── express.d.ts       # Express type extensions
+│   │   ├── user.types.ts      # User related types
+│   │   ├── job.types.ts       # Job related types
+│   │   └── requests.types.ts  # Request/Response types
+│   ├── utils/
+│   │   ├── logger.ts
+│   │   ├── validators.ts
+│   │   └── helpers.ts
+│   └── server.ts             # Main application entry point
+├── .env                      # Environment variables
+├── .gitignore
+├── tsconfig.json             # TypeScript configuration
+├── package.json
+└── README.md
+
