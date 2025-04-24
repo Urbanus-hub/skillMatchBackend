@@ -1,0 +1,498 @@
+import { Client } from 'pg';
+import * as dotenv from 'dotenv';
+import { faker } from '@faker-js/faker';
+
+dotenv.config();
+
+const client = new Client({
+  connectionString: process.env.DATABASE_URL,
+});
+
+// Table names and their dependent tables
+const TABLES = [
+    'interviews',
+    'interviewers',
+    'interview_documents',
+    'interview_followups',
+    'job_applications',
+    'saved_jobs',
+    'job_skills',
+    'portfolio_items',
+    'user_skills',
+    'user_experience',
+    'user_education',
+    'user_documents',
+    'user_profiles',
+    'jobs',
+    'messages',
+    'message_attachments',
+    'message_label_junction',
+    'notifications',
+    'learning_notes',
+    'learning_resources',
+    'learning_additional_resources',
+    'learning_resource_tags',
+    'learning_resource_contents',
+    'skills',
+    'companies',
+    'users',
+    'message_labels',
+  ];
+  
+  async function truncateAllTables() {
+    try {
+      for (const table of TABLES.reverse()) {
+        await client.query(`TRUNCATE TABLE ${table} CASCADE`);
+        console.log(`✅ Truncated table: ${table}`);
+      }
+    } catch (err) {
+      console.error('❌ Error truncating tables:', err);
+      throw err;
+    }
+  }
+
+const getRandomCount = () => faker.number.int({ min: 20, max: 50 });
+
+async function seed() {
+  try {
+    await client.connect();
+
+    await truncateAllTables()
+
+    // --- BATCH 1: Independent tables ---
+    await seedSkills();
+    await seedUsers();
+    await seedCompanies();
+    await seedLearningResources();
+    await seedMessageLabels();
+    await seedMessages();
+
+    // --- BATCH 2: Depends on BATCH 1 ---
+    await seedJobs();                    // ← companies
+    await seedUserProfiles();            // ← users
+    await seedUserDocuments();           // ← users
+    await seedUserEducation();           // ← users
+    await seedUserExperience();          // ← users
+    await seedUserSkills();              // ← users + skills
+    await seedPortfolioItems();          // ← users
+    await seedJobSkills();               // ← jobs + skills
+    await seedSavedJobs();               // ← users + jobs
+    await seedNotifications();           // ← users
+    await seedMessageAttachments();      // ← messages + user_documents
+    await seedMessageLabelJunction();    // ← messages + message_labels
+    await seedJobApplications();         // ← jobs + users
+    await seedInterviews();              // ← jobs + users
+    // await seedLearningAdditionalResources(); // ← learning_resources
+    await seedLearningNotes();           // ← learning_resources
+    // await seedLearningResourceTags();    // ← learning_resources
+    // await seedLearningResourceContents(); // ← learning_resources (recursive)
+
+    // --- BATCH 3: Depends on Interviews and others ---
+    await seedInterviewDocuments();      // ← interviews + user_documents
+    await seedInterviewFollowups();      // ← interviews
+    await seedInterviewQuestions();      // ← interviews
+    await seedInterviewers();            // ← interviews
+
+    console.log('✅ Seeding complete!');
+  } catch (err) {
+    console.error('❌ Error seeding DB:', err);
+  } finally {
+    await client.end();
+  }
+}
+async function seedSkills() {
+    for (let i = 0; i < 30; i++) {
+      await client.query(
+        `INSERT INTO skills (name, category) VALUES ($1, $2)`,
+        [faker.hacker.noun(), faker.hacker.verb()]
+      );
+    }
+  }
+  
+  async function seedUsers() {
+    for (let i = 0; i < 30; i++) {
+      await client.query(
+        `INSERT INTO users (email, password, role, created_at, updated_at)
+         VALUES ($1, $2, $3, NOW(), NOW())`,
+        [
+          `user${i+1}@gmail.com`,
+          'default@123A',
+          faker.helpers.arrayElement(['job_seeker', 'employer', 'admin']),
+        ]
+      );
+    }
+  }
+  
+  async function seedCompanies() {
+    for (let i = 0; i < 20; i++) {
+      await client.query(
+        `INSERT INTO companies (name, description, website_url, logo_url, location, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, NOW(), NOW())`,
+        [
+          faker.company.name(),
+          faker.company.catchPhrase(),
+          faker.internet.url(),
+          faker.image.avatar(),
+          faker.location.city(),
+        ]
+      );
+    }
+  }
+  
+  async function seedLearningResources() {
+    for (let i = 0; i < 20; i++) {
+      await client.query(
+        `INSERT INTO learning_resources (title, description, url, cover_image, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, NOW(), NOW())`,
+        [
+          faker.lorem.sentence(),
+          faker.lorem.paragraph(),
+          faker.internet.url(),
+          faker.image.urlLoremFlickr({ category: 'education' }),
+        ]
+      );
+    }
+  }
+  
+  async function seedMessageLabels() {
+    for (let i = 0; i < 10; i++) {
+      await client.query(
+        `INSERT INTO message_labels (label, color) VALUES ($1, $2)`,
+        [faker.word.words(), faker.color.rgb()]
+      );
+    }
+  }
+  
+  async function seedMessages() {
+    for (let i = 0; i < 40; i++) {
+      await client.query(
+        `INSERT INTO messages (sender_id, receiver_id, subject, body, sent_at, read)
+         VALUES ($1, $2, $3, $4, NOW(), $5)`,
+        [
+          faker.number.int({ min: 1, max: 20 }), // assuming seeded users
+          faker.number.int({ min: 1, max: 20 }),
+          faker.lorem.sentence(),
+          faker.lorem.paragraph(),
+          faker.datatype.boolean(),
+        ]
+      );
+    }
+  }
+  async function seedJobs() {
+    for (let i = 0; i < 30; i++) {
+      await client.query(
+        `INSERT INTO jobs (title, description, company_id, location, salary, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, NOW(), NOW())`,
+        [
+          faker.person.jobTitle(),
+          faker.lorem.paragraph(),
+          faker.number.int({ min: 1, max: 20 }), // company_id
+          faker.location.city(),
+          faker.number.int({ min: 40000, max: 150000 }),
+        ]
+      );
+    }
+  }
+  
+  async function seedUserProfiles() {
+    for (let i = 0; i < 30; i++) {
+      await client.query(
+        `INSERT INTO user_profiles (user_id, full_name, bio, avatar_url, linkedin_url)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [
+          i + 1, // user_id 1–30
+          faker.person.fullName(),
+          faker.lorem.paragraph(),
+          faker.image.avatar(),
+          faker.internet.url(),
+        ]
+      );
+    }
+  }
+  
+  async function seedUserDocuments() {
+    for (let i = 0; i < 30; i++) {
+      await client.query(
+        `INSERT INTO user_documents (user_id, document_type, file_url, uploaded_at)
+         VALUES ($1, $2, $3, NOW())`,
+        [
+          faker.number.int({ min: 1, max: 30 }),
+          faker.helpers.arrayElement(['resume', 'cover_letter', 'certification']),
+          faker.internet.url(),
+        ]
+      );
+    }
+  }
+  
+  async function seedUserEducation() {
+    for (let i = 0; i < 30; i++) {
+      await client.query(
+        `INSERT INTO user_education (user_id, institution, degree, field_of_study, start_date, end_date, location)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [
+          faker.number.int({ min: 1, max: 30 }),
+          faker.company.name() + ' University',
+          faker.helpers.arrayElement(['BSc', 'BA', 'MSc', 'MBA', 'Diploma']),
+          faker.helpers.arrayElement(['Computer Science', 'Business', 'Economics', 'Design', 'Engineering']),
+          faker.date.past({ years: 8 }).toISOString().split('T')[0],
+          faker.date.past({ years: 1 }).toISOString().split('T')[0],
+          faker.location.city(),
+        ]
+      );
+    }
+  }
+  
+  
+  async function seedUserExperience() {
+    for (let i = 0; i < 40; i++) {
+      await client.query(
+        `INSERT INTO user_experience (user_id, company, title, start_date, end_date, description)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [
+          faker.number.int({ min: 1, max: 30 }),
+          faker.company.name(),
+          faker.person.jobTitle(),
+          faker.date.past().toISOString().split('T')[0],
+          faker.date.recent().toISOString().split('T')[0],
+          faker.lorem.sentences(2),
+        ]
+      );
+    }
+  }
+  
+  async function seedUserSkills() {
+    for (let i = 0; i < 60; i++) {
+      await client.query(
+        `INSERT INTO user_skills (user_id, skill_id, proficiency_level)
+         VALUES ($1, $2, $3)`,
+        [
+          faker.number.int({ min: 1, max: 30 }),
+          faker.number.int({ min: 1, max: 30 }),
+          faker.helpers.arrayElement(['beginner', 'intermediate', 'expert']),
+        ]
+      );
+    }
+  }
+  
+  async function seedPortfolioItems() {
+    for (let i = 0; i < 20; i++) {
+      await client.query(
+        `INSERT INTO portfolio_items (user_id, title, description, url)
+         VALUES ($1, $2, $3, $4)`,
+        [
+          faker.number.int({ min: 1, max: 30 }),
+          faker.lorem.words(3),
+          faker.lorem.sentences(2),
+          faker.internet.url(),
+        ]
+      );
+    }
+  }
+  
+  async function seedJobSkills() {
+    for (let i = 0; i < 50; i++) {
+      await client.query(
+        `INSERT INTO job_skills (job_id, skill_id)
+         VALUES ($1, $2)`,
+        [
+          faker.number.int({ min: 1, max: 30 }),
+          faker.number.int({ min: 1, max: 30 }),
+        ]
+      );
+    }
+  }
+  
+  async function seedSavedJobs() {
+    for (let i = 0; i < 40; i++) {
+      await client.query(
+        `INSERT INTO saved_jobs (user_id, job_id, saved_at)
+         VALUES ($1, $2, NOW())`,
+        [
+          faker.number.int({ min: 1, max: 30 }),
+          faker.number.int({ min: 1, max: 30 }),
+        ]
+      );
+    }
+  }
+  
+  async function seedNotifications() {
+    for (let i = 0; i < 30; i++) {
+      await client.query(
+        `INSERT INTO notifications (user_id, content, read, created_at)
+         VALUES ($1, $2, $3, NOW())`,
+        [
+          faker.number.int({ min: 1, max: 30 }),
+          faker.lorem.sentence(),
+          faker.datatype.boolean(),
+        ]
+      );
+    }
+  }
+  async function seedMessageAttachments() {
+    for (let i = 0; i < 30; i++) {
+      await client.query(
+        `INSERT INTO message_attachments (message_id, file_url, file_type)
+         VALUES ($1, $2, $3)`,
+        [
+          faker.number.int({ min: 1, max: 40 }), // message_id
+          faker.internet.url(),
+          faker.system.mimeType(),
+        ]
+      );
+    }
+  }
+  
+  async function seedMessageLabelJunction() {
+    for (let i = 0; i < 40; i++) {
+      await client.query(
+        `INSERT INTO message_label_junction (message_id, label_id)
+         VALUES ($1, $2)`,
+        [
+          faker.number.int({ min: 1, max: 40 }), // message_id
+          faker.number.int({ min: 1, max: 10 }), // label_id
+        ]
+      );
+    }
+  }
+  
+  async function seedJobApplications() {
+    for (let i = 0; i < 40; i++) {
+      await client.query(
+        `INSERT INTO job_applications (job_id, user_id, status, applied_at)
+         VALUES ($1, $2, $3, NOW())`,
+        [
+          faker.number.int({ min: 1, max: 30 }),
+          faker.number.int({ min: 1, max: 30 }),
+          faker.helpers.arrayElement(['pending', 'reviewed', 'accepted', 'rejected']),
+        ]
+      );
+    }
+  }
+  
+  async function seedInterviews() {
+    for (let i = 0; i < 30; i++) {
+      await client.query(
+        `INSERT INTO interviews (job_application_id, scheduled_at, location, notes)
+         VALUES ($1, $2, $3, $4)`,
+        [
+          faker.number.int({ min: 1, max: 30 }),
+          faker.date.future().toISOString(),
+          faker.location.streetAddress(),
+          faker.lorem.sentences(2),
+        ]
+      );
+    }
+  }
+  
+  async function seedLearningTags() {
+    for (let i = 0; i < 20; i++) {
+      await client.query(
+        `INSERT INTO learning_tags (name) VALUES ($1)`,
+        [faker.word.words(1)]
+      );
+    }
+  }
+  
+  async function seedLearningTagJunction() {
+    for (let i = 0; i < 30; i++) {
+      await client.query(
+        `INSERT INTO learning_tag_junction (resource_id, tag_id)
+         VALUES ($1, $2)`,
+        [
+          faker.number.int({ min: 1, max: 20 }), // resource_id
+          faker.number.int({ min: 1, max: 20 }), // tag_id
+        ]
+      );
+    }
+  }
+  
+  async function seedLearningNotes() {
+    for (let i = 0; i < 30; i++) {
+      await client.query(
+        `INSERT INTO learning_notes (resource_id, user_id, note, created_at)
+         VALUES ($1, $2, $3, NOW())`,
+        [
+          faker.number.int({ min: 1, max: 20 }),
+          faker.number.int({ min: 1, max: 30 }),
+          faker.lorem.sentences(2),
+        ]
+      );
+    }
+  }
+  
+  async function seedLearningContents() {
+    for (let i = 0; i < 20; i++) {
+      await client.query(
+        `INSERT INTO learning_contents (resource_id, content_type, content)
+         VALUES ($1, $2, $3)`,
+        [
+          faker.number.int({ min: 1, max: 20 }),
+          faker.helpers.arrayElement(['video', 'text', 'quiz']),
+          faker.lorem.paragraphs(1),
+        ]
+      );
+    }
+  }
+  
+  async function seedInterviewDocuments() {
+    for (let i = 0; i < 20; i++) {
+      await client.query(
+        `INSERT INTO interview_documents (interview_id, document_id)
+         VALUES ($1, $2)`,
+        [
+          faker.number.int({ min: 1, max: 30 }), // interview_id
+          faker.number.int({ min: 1, max: 30 }), // document_id
+        ]
+      );
+    }
+  }
+  
+  async function seedInterviewFollowups() {
+    for (let i = 0; i < 20; i++) {
+      await client.query(
+        `INSERT INTO interview_followups (interview_id, sent, followup_date, content)
+         VALUES ($1, $2, $3, $4)`,
+        [
+          faker.number.int({ min: 1, max: 30 }),
+          faker.datatype.boolean(),
+          faker.date.future().toISOString(),
+          faker.lorem.sentences(2),
+        ]
+      );
+    }
+  }
+  
+  async function seedInterviewQuestions() {
+    for (let i = 0; i < 25; i++) {
+      await client.query(
+        `INSERT INTO interview_questions (interview_id, question, notes, answered)
+         VALUES ($1, $2, $3, $4)`,
+        [
+          faker.number.int({ min: 1, max: 30 }),
+          faker.lorem.sentence(),
+          faker.lorem.sentences(2),
+          faker.datatype.boolean(),
+        ]
+      );
+    }
+  }
+  
+  async function seedInterviewers() {
+    for (let i = 0; i < 20; i++) {
+      await client.query(
+        `INSERT INTO interviewers (interview_id, name, title, avatar_url, linkedin_url, notes)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [
+          faker.number.int({ min: 1, max: 30 }),
+          faker.person.fullName(),
+          faker.person.jobTitle(),
+          faker.image.avatar(),
+          faker.internet.url(),
+          faker.lorem.sentences(2),
+        ]
+      );
+    }
+  }
+  
+
+seed()
