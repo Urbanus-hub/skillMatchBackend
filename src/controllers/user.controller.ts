@@ -145,8 +145,7 @@ export const updateProfile = async (req: AuthRequest, res: Response, next: NextF
         website_url,
         linkedin_url,
         github_url,
-        finalImageUrl, // Use the determined final URL
-        userId
+        finalImageUrl // Use the determined final URL
       ]);
       logger.info(`Updated profile details for user ${userId}`);
 

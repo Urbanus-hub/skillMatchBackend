@@ -48,8 +48,7 @@ export const validateRegister = [
     .notEmpty().withMessage('Password is required.')
     .isLength({ min: 8 }).withMessage('Password must be at least 8 characters long.')
     // Regex requires: 1 lowercase, 1 uppercase, 1 number, 1 special char
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/)
-    .withMessage('Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&).'),
+   ,
 
   // Password confirmation validation
   check('confirm_password')
@@ -63,11 +62,11 @@ export const validateRegister = [
       return true; // Indicates validation passed
     }),
 
-  // User type validation
+  // User type validation - Updated to include admin
   check('user_type')
     .trim()
     .notEmpty().withMessage('User type is required.')
-    .isIn(['job_seeker', 'employer']).withMessage('User type must be either job_seeker or employer.'),
+    .isIn(['job_seeker', 'employer', 'admin']).withMessage('User type must be either job_seeker, employer, or admin.'),
 
   // Use the reusable handler
   handleValidationErrors
@@ -97,8 +96,8 @@ export const validatePasswordReset = [
     .trim()
     .notEmpty().withMessage('New password is required.')
     .isLength({ min: 8 }).withMessage('Password must be at least 8 characters long.')
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/)
-    .withMessage('Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&).'),
+    
+    ,
 
   check('confirm_password')
     .trim()

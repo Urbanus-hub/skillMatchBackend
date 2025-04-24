@@ -66,12 +66,12 @@ import {
 const router = express.Router();
 
 // All routes are protected
-router.use(protect);
+//
 
 // Profile routes
 router.get('/profile', getProfile);
 // Add multer middleware for single file upload named 'profileImage' (adjust field name if different)
-router.put('/profile', upload.single('profileImage'), updateProfile);
+router.put('/profile', protect, upload.single('profileImage'), updateProfile);
 
 // Skills routes
 router.get('/skills', getSkills);
