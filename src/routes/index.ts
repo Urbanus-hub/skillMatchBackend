@@ -2,7 +2,7 @@ import { Router } from 'express';
 import authRoutes from './auth.routes';
 import userRoutes from './user.routes';
 import jobRoutes from './job.routes';
-import aiRoutes from './ai.routes';
+import aiRoutes from './AiRoutes';
 // import companyRoutes from './company.routes';
 // import applicationRoutes from './application.routes';
 // import interviewRoutes from './interview.routes';
